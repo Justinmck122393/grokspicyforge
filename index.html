@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grok Spicy Forge — Free NSFW AI Image Generator</title>
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --border: #2a2a3a;
+      --accent: #ff2d55;
+      --accent2: #bf5af2;
+      --text: #f0f0f5;
+      --muted: #8a8a9a;
+      --success: #30d158;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 30px 0 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 30px;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    header p { color: var(--muted); font-size: 0.95rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 28px;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+    label:first-child { margin-top: 0; }
+    textarea, input, select {
+      width: 100%;
+      background: #0e0e16;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    textarea { min-height: 110px; font-family: inherit; }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .chip {
+      background: #1a1a26;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .chip:hover, .chip.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: transparent;
+      color: white;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 18px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #ff6b8a);
+      color: white;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(255,45,85,0.35); }
+    .btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-secondary {
+      background: #1a1a26;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); }
+    .result-area {
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .placeholder {
+      color: var(--muted);
+      text-align: center;
+      padding: 40px;
+    }
+    .placeholder svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.4; }
+    #generatedImage {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      display: none;
+    }
+    .loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .actions {
+      display: none;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .actions .btn { width: auto; padding: 10px 18px; margin-top: 0; font-size: 0.9rem; }
+    .history {
+      margin-top: 30px;
+    }
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .history-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .history-item:hover { border-color: var(--accent); }
+    .history-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      max-width: 440px;
+      text-align: center;
+    }
+    .modal-content h2 { margin-bottom: 12px; color: var(--accent); }
+    .modal-content p { color: var(--muted); margin-bottom: 24px; font-size: 0.95rem; }
+    .notice {
+      background: #1a1218;
+      border: 1px solid #3a2030;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      color: #c0a0b0;
+      margin-top: 16px;
+    }
+    .model-info {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    footer {
+      text-align: center;
+      padding: 40px 0 20px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <!-- Age Gate -->
+  <div id="ageGate" class="modal">
+    <div class="modal-content">
+      <h2>18+ Only</h2>
+      <p>This tool generates adult / NSFW content intended for adults only. By continuing you confirm you are at least 18 years old and accept full responsibility for the content you create.</p>
+      <button class="btn btn-primary" onclick="acceptAge()">I am 18 or older — Enter</button>
+      <button class="btn btn-secondary" style="margin-top:10px" onclick="window.location.href='https://www.google.com'">Exit</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <h1>Grok Spicy Forge</h1>
+      <p>High-quality free NSFW image generator • Grok Imagine + Flux</p>
+    </header>
+
+    <div class="grid">
+      <!-- Controls -->
+      <div class="card">
+        <h2>🎨 Prompt Studio</h2>
+
+        <label>Model</label>
+        <select id="modelSelect">
+          <option value="puter-grok">Grok Imagine (Puter) — Highest quality</option>
+          <option value="puter-grok-quality">Grok Imagine Quality (Puter)</option>
+          <option value="pollinations-flux">Flux (Pollinations) — Fully free, no login</option>
+        </select>
+        <div class="model-info" id="modelInfo">Uses Puter.js (you need a free Puter account & to be logged in). Highest quality, same engine as Grok.</div>
+
+        <label>Main Prompt</label>
+        <textarea id="prompt" placeholder="Describe the scene in detail... e.g. beautiful woman in sheer black lingerie, soft bedroom lighting, seductive pose, highly detailed skin, cinematic..."></textarea>
+
+        <label>Quick Styles</label>
+        <div class="chips" id="styleChips">
+          <span class="chip" data-value="photorealistic, highly detailed, 8k, sharp focus, natural skin texture">Photoreal</span>
+          <span class="chip" data-value="cinematic lighting, dramatic shadows, film still, shallow depth of field">Cinematic</span>
+          <span class="chip" data-value="anime style, detailed eyes, vibrant colors, studio lighting">Anime</span>
+          <span class="chip" data-value="digital art, intricate details, beautiful composition">Digital Art</span>
+          <span class="chip" data-value="oil painting style, classical lighting, masterpiece">Oil Painting</span>
+        </div>
+
+        <label>Intensity / Clothing</label>
+        <div class="chips" id="intensityChips">
+          <span class="chip" data-value="elegant lingerie, soft lighting, sensual">Sensual</span>
+          <span class="chip active" data-value="sheer lingerie, detailed body, seductive expression, erotic atmosphere">Spicy</span>
+          <span class="chip" data-value="nude, detailed anatomy, tasteful erotic, soft shadows">Nude / Artistic</span>
+          <span class="chip" data-value="explicit, detailed, passionate, intimate close-up">Explicit</span>
+        </div>
+
+        <label>Pose / Framing</label>
+        <div class="chips" id="poseChips">
+          <span class="chip" data-value="standing pose, full body">Full Body</span>
+          <span class="chip" data-value="sitting on bed, looking at viewer">Sitting</span>
+          <span class="chip" data-value="lying down, inviting pose">Reclining</span>
+          <span class="chip" data-value="close-up portrait, intimate">Close-up</span>
+          <span class="chip" data-value="from behind, over the shoulder look">From Behind</span>
+        </div>
+
+        <label>Negative Prompt</label>
+        <textarea id="negative" rows="2">low quality, blurry, deformed, extra limbs, bad anatomy, watermark, text, logo, censored, mosaic</textarea>
+
+        <div class="row">
+          <div>
+            <label>Aspect Ratio</label>
+            <select id="aspect">
+              <option value="1024x1024">1:1 Square</option>
+              <option value="832x1216">Portrait 2:3</option>
+              <option value="1216x832">Landscape 3:2</option>
+              <option value="768x1344">Tall 9:16</option>
+              <option value="1344x768">Wide 16:9</option>
+            </select>
+          </div>
+          <div>
+            <label>Seed (optional)</label>
+            <input type="number" id="seed" placeholder="Random" />
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="generateBtn" onclick="generate()">
+          🔥 Generate Image
+        </button>
+
+        <div class="notice">
+          Adult fictional content only. No real people, no minors. You are responsible for what you generate and how you use it.
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="card result-area">
+        <div class="placeholder" id="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+          <p>Your generated image will appear here</p>
+        </div>
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Generating high-quality image…</p>
+        </div>
+        <img id="generatedImage" alt="Generated NSFW image" />
+        <div class="actions" id="actions">
+          <button class="btn btn-secondary" onclick="downloadImage()">Download</button>
+          <button class="btn btn-secondary" onclick="copyPrompt()">Copy Prompt</button>
+          <button class="btn btn-primary" onclick="generate()">Regenerate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card history" id="historySection" style="display:none; margin-top:28px;">
+      <h2>📚 Recent Generations</h2>
+      <div class="history-grid" id="historyGrid"></div>
+    </div>
+
+    <footer>
+      Built for free personal use • Powered by Grok Imagine (via Puter) & Pollinations Flux<br>
+      <a href="https://github.com/Justinmck122393/grokspicyforge" target="_blank">GitHub Repo</a>
+    </footer>
+  </div>
+
+  <script>
+    // Age gate
+    function acceptAge() {
+      localStorage.setItem('spicyForgeAgeOk', '1');
+      document.getElementById('ageGate').classList.add('hidden');
+    }
+    if (localStorage.getItem('spicyForgeAgeOk') === '1') {
+      document.getElementById('ageGate').classList.add('hidden');
+    }
+
+    // Chip toggles
+    function setupChips(containerId, exclusive = false) {
+      const container = document.getElementById(containerId);
+      container.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          if (exclusive) {
+            container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+          } else {
+            chip.classList.toggle('active');
+          }
+          updatePromptFromChips();
+        });
+      });
+    }
+    setupChips('styleChips');
+    setupChips('intensityChips', true);
+    setupChips('poseChips');
+
+    function getActiveChipValues(containerId) {
+      return Array.from(document.getElementById(containerId).querySelectorAll('.chip.active'))
+        .map(c => c.dataset.value);
+    }
+
+    function updatePromptFromChips() {
+      // Optional helper – user can still edit freely
+    }
+
+    // Model info
+    document.getElementById('modelSelect').addEventListener('change', (e) => {
+      const info = document.getElementById('modelInfo');
+      if (e.target.value.startsWith('puter')) {
+        info.textContent = 'Uses Puter.js (free Puter account + login required in this browser). Highest quality, same family as Grok Imagine.';
+      } else {
+        info.textContent = 'Fully free, no account needed. Uses Flux via Pollinations. Rate limits may apply for heavy anonymous use.';
+      }
+    });
+
+    // Build final prompt
+    function buildPrompt() {
+      const base = document.getElementById('prompt').value.trim();
+      const styles = getActiveChipValues('styleChips');
+      const intensity = getActiveChipValues('intensityChips');
+      const poses = getActiveChipValues('poseChips');
+      const parts = [base, ...styles, ...intensity, ...poses].filter(Boolean);
+      return parts.join(', ');
+    }
+
+    // History
+    let history = JSON.parse(localStorage.getItem('spicyForgeHistory') || '[]');
+    function saveToHistory(url, prompt) {
+      history.unshift({ url, prompt, time: Date.now() });
+      history = history.slice(0, 24);
+      localStorage.setItem('spicyForgeHistory', JSON.stringify(history));
+      renderHistory();
+    }
+    function renderHistory() {
+      const section = document.getElementById('historySection');
+      const grid = document.getElementById('historyGrid');
+      if (history.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = 'block';
+      grid.innerHTML = history.map((item, i) => `
+        <div class="history-item" onclick="loadHistory(${i})">
+          <img src="${item.url}" alt="History ${i}" loading="lazy" />
+        </div>
+      `).join('');
+    }
+    function loadHistory(i) {
+      const item = history[i];
+      document.getElementById('prompt').value = item.prompt;
+      showImage(item.url);
+    }
+    renderHistory();
+
+    // UI helpers
+    function showLoading() {
+      document.getElementById('placeholder').style.display = 'none';
+      document.getElementById('generatedImage').style.display = 'none';
+      document.getElementById('actions').style.display = 'none';
+      document.getElementById('loading').style.display = 'flex';
+      document.getElementById('generateBtn').disabled = true;
+    }
+    function showImage(url) {
+      const img = document.getElementById('generatedImage');
+      img.src = url;
+      img.style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('placeholder').style.display = 'none';
+      document.getElementById('actions').style.display = 'flex';
+      document.getElementById('generateBtn').disabled = false;
+      window.currentImageUrl = url;
+    }
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('placeholder').style.display = 'block';
+      document.getElementById('placeholder').innerHTML = `<p style="color:#ff6b6b">${msg}</p>`;
+      document.getElementById('generateBtn').disabled = false;
+    }
+
+    // Main generate
+    async function generate() {
+      const model = document.getElementById('modelSelect').value;
+      const prompt = buildPrompt();
+      const negative = document.getElementById('negative').value.trim();
+      const aspect = document.getElementById('aspect').value;
+      const [w, h] = aspect.split('x').map(Number);
+      let seed = document.getElementById('seed').value;
+      if (!seed) seed = Math.floor(Math.random() * 999999999);
+
+      if (!prompt) {
+        alert('Please enter a prompt');
+        return;
+      }
+
+      showLoading();
+
+      try {
+        if (model.startsWith('puter')) {
+          // Puter.js path
+          if (typeof puter === 'undefined') {
+            throw new Error('Puter.js failed to load. Check your connection.');
+          }
+          const modelName = model === 'puter-grok-quality'
+            ? 'x-ai/grok-imagine-image-quality'
+            : 'x-ai/grok-imagine-image';
+
+          const fullPrompt = negative
+            ? `${prompt} ### Negative: ${negative}`
+            : prompt;
+
+          const imgEl = await puter.ai.txt2img(fullPrompt, {
+            model: modelName,
+            // quality: 'high' // optional
+          });
+
+          // Puter returns an <img> element
+          const url = imgEl.src;
+          showImage(url);
+          saveToHistory(url, prompt);
+        } else {
+          // Pollinations Flux (free, no key)
+          const encoded = encodeURIComponent(prompt);
+          const url = `https://image.pollinations.ai/prompt/${encoded}?width=${w}&height=${h}&seed=${seed}&nologo=true&private=true&model=flux&enhance=true`;
+          // Preload to catch errors
+          const testImg = new Image();
+          testImg.crossOrigin = 'anonymous';
+          testImg.onload = () => {
+            showImage(url);
+            saveToHistory(url, prompt);
+          };
+          testImg.onerror = () => {
+            showError('Generation failed or was filtered. Try a milder prompt or switch to Grok Imagine model.');
+          };
+          testImg.src = url;
+        }
+      } catch (err) {
+        console.error(err);
+        let msg = err.message || 'Generation failed';
+        if (msg.includes('login') || msg.includes('auth') || msg.includes('account')) {
+          msg = 'Puter requires you to be logged in at puter.com in this browser. Open puter.com, log in, then try again. Or switch to the free Flux option.';
+        }
+        showError(msg);
+      }
+    }
+
+    function downloadImage() {
+      if (!window.currentImageUrl) return;
+      const a = document.createElement('a');
+      a.href = window.currentImageUrl;
+      a.download = `spicy-forge-${Date.now()}.png`;
+      a.click();
+    }
+
+    function copyPrompt() {
+      const p = buildPrompt();
+      navigator.clipboard.writeText(p).then(() => {
+        alert('Prompt copied to clipboard');
+      });
+    }
+  </script>
+</body>
+</html>
